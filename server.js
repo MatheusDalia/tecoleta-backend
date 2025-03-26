@@ -41,8 +41,8 @@ sequelize
     return sequelize.sync({ force: true }); // Adicionando { force: true } para recriar as tabelas
   })
   .then(() => {
-    app.listen(3001, () => {
-      console.log("Servidor rodando na porta 3000");
+    app.listen(3003, () => {
+      console.log("Servidor rodando na porta 3003");
     });
   })
   .catch((err) => {
