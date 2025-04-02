@@ -63,17 +63,14 @@ router.post("/cadastro", async (req, res) => {
 
     // Enviar email de verificação
     const verificationLink = `${process.env.FRONTEND_URL}/api/confirmar-email?token=${tokenVerificacao}`;
-
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
       subject: "Verifique seu email",
-      html: `
-        <h1>Bem-vindo ao nosso sistema!</h1>
-        <p>Por favor, clique no link abaixo para confirmar seu email:</p>
-        <a href="${verificationLink}">Confirmar email</a>
-        <p>Este link é válido por 24 horas.</p>
-      `,
+      html: `<h1>Bem-vindo ao nosso sistema!</h1>
+             <p>Por favor, clique no link abaixo para confirmar seu email:</p>
+             <a href="${verificationLink}">Confirmar email</a>
+             <p>Este link é válido por 24 horas.</p>`,
     });
 
     res.status(201).json({
