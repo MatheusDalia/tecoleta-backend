@@ -38,7 +38,7 @@ sequelize
     console.log("Conexão com o banco de dados estabelecida com sucesso.");
 
     // Sincronizar o banco de dados e iniciar o servidor
-    return sequelize.sync({ force: true }); // Adicionando { force: true } para recriar as tabelas
+    return sequelize.sync(); // Adicionando { force: true } para recriar as tabelas
   })
   .then(() => {
     app.listen(3003, () => {
