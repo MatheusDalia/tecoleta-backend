@@ -228,7 +228,8 @@ router.post("/reset-password", async (req, res) => {
     });
 
     // Criar URL de redefinição
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    const baseUrl = "meuapp:";
+    const resetUrl = `${baseUrl}//reset-password?token=${resetToken}`;
 
     // Enviar email com link de redefinição
     await transporter.sendMail({
@@ -238,10 +239,10 @@ router.post("/reset-password", async (req, res) => {
       html: `
         <h1>Redefinição de Senha</h1>
         <p>Você solicitou a redefinição de sua senha.</p>
-        <p>Clique no link abaixo para definir uma nova senha:</p>
-        <a href="${resetUrl}">Redefinir senha</a>
-        <p>Este link é válido por 1 hora.</p>
-        <p>Se você não solicitou esta redefinição, ignore este email.</p>
+        <p>Use o token abaixo no aplicativo para redefinir sua senha:</p>
+        <p style="font-family: monospace; font-size: 20px;">${resetToken}</p>
+        <p>Este token é válido por 1 hora.</p>
+        <p>Se você não solicitou isso, ignore este e-mail.</p>
       `,
     });
 
