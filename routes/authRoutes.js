@@ -64,7 +64,7 @@ router.post("/cadastro", async (req, res) => {
     // Enviar email de verificação
     const verificationLink = `${process.env.FRONTEND_URL}/api/confirmar-email?token=${tokenVerificacao}`;
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: process.env.SMTP_USER,
       to: email,
       subject: "Verifique seu email",
       html: `<h1>Bem-vindo ao nosso sistema!</h1>
@@ -233,7 +233,7 @@ router.post("/reset-password", async (req, res) => {
 
     // Enviar email com link de redefinição
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: process.env.SMTP_USER,
       to: email,
       subject: "Redefinição de Senha",
       html: `
