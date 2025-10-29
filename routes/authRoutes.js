@@ -278,11 +278,12 @@ router.post("/new-password", async (req, res) => {
     // Hash da nova senha
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Atualizar usuário com nova senha e limpar tokens
+    // Atualizar usuário com nova senha, limpar tokens e marcar como verificado
     await user.update({
       senha: hashedPassword,
       resetPasswordToken: null,
       resetPasswordExpires: null,
+      emailVerificado: true, // Marca como verificado após redefinir senha
     });
 
     res.json({
