@@ -85,51 +85,57 @@ router.post("/cadastro", async (req, res) => {
 });
 
 // Reenviar email de verificação
-// router.post("/enviar-verificacao", async (req, res) => {
-//   try {
-//     const { email } = req.body;
-//     const user = await User.findOne({ where: { email } });
+router.post("/enviar-verificacao", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email não fornecido" });
+    }
 
-//     if (!user) {
-//       return res.status(404).json({ message: "Usuário não encontrado" });
-//     }
+    const user = await User.findOne({ where: { email } });
 
-//     if (user.emailVerificado) {
-//       return res.status(400).json({ message: "Email já verificado" });
-//     }
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "Conta não cadastrada. Por favor, crie uma conta." });
+    }
 
-//     // Gerar novo token
-//     const tokenVerificacao = crypto.randomBytes(32).toString("hex");
-//     const tokenExpiracao = new Date();
-//     tokenExpiracao.setHours(tokenExpiracao.getHours() + 24);
+    if (user.emailVerificado) {
+      return res.status(200).json({ message: "A conta já está verificada." });
+    }
 
-//     // Atualizar token no banco
-//     await user.update({
-//       tokenVerificacao,
-//       tokenExpiracao,
-//     });
+    // Gerar novo token
+    const tokenVerificacao = crypto.randomBytes(32).toString("hex");
+    const tokenExpiracao = new Date();
+    tokenExpiracao.setHours(tokenExpiracao.getHours() + 24);
 
-//     // Enviar novo email
-//     const verificationLink = `${process.env.FRONTEND_URL}/api/confirmar-email?token=${tokenVerificacao}`;
+    // Atualizar token no banco
+    await user.update({
+      tokenVerificacao,
+      tokenExpiracao,
+    });
 
-//     await transporter.sendMail({
-//       from: process.env.EMAIL_USER,
-//       to: email,
-//       subject: "Verifique seu email",
-//       html: `
-//         <h1>Verificação de email</h1>
-//         <p>Por favor, clique no link abaixo para verificar seu email:</p>
-//         <a href="${verificationLink}">Verificar email</a>
-//         <p>Este link é válido por 24 horas.</p>
-//       `,
-//     });
+    // Enviar novo email
+    const verificationLink = `${process.env.FRONTEND_URL}/api/confirmar-email?token=${tokenVerificacao}`;
 
-//     res.json({ message: "Email de verificação reenviado com sucesso" });
-//   } catch (error) {
-//     console.error("Erro ao reenviar verificação:", error);
-//     res.status(500).json({ message: "Erro ao reenviar email de verificação" });
-//   }
-// });
+    await transporter.sendMail({
+      from: process.env.SMTP_USER || process.env.EMAIL_USER,
+      to: email,
+      subject: "Verifique seu email",
+      html: `
+        <h1>Verificação de email</h1>
+        <p>Por favor, clique no link abaixo para verificar seu email:</p>
+        <a href="${verificationLink}">Verificar email</a>
+        <p>Este link é válido por 24 horas.</p>
+      `,
+    });
+
+    res.json({ message: "Email de verificação reenviado com sucesso." });
+  } catch (error) {
+    console.error("Erro ao reenviar verificação:", error);
+    res.status(500).json({ message: "Erro ao reenviar email de verificação" });
+  }
+});
 
 // Confirmar verificação de email
 router.get("/confirmar-email", async (req, res) => {
