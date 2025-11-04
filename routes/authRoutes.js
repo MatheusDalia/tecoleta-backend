@@ -6,6 +6,7 @@ const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const User = require("../models/User");
 require("dotenv").config();
+console.log("SMTP_HOST:", process.env.SMTP_HOST);
 const { Op } = require("sequelize");
 
 // Configuração do nodemailer
