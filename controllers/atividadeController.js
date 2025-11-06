@@ -2,21 +2,45 @@
 const Atividade = require("../models/Atividade");
 const Obra = require("../models/Obra");
 
+// Função para converter vírgulas em pontos nos campos numéricos
+const processarCamposNumericos = (data) => {
+  const camposNumericos = [
+    "numeroOperarios",
+    "numeroAjudantes",
+    "horasTrabalho",
+    "quantidadeExecutada",
+  ];
+
+  camposNumericos.forEach((campo) => {
+    if (data[campo] !== undefined && data[campo] !== null) {
+      // Converte string com vírgula para número com ponto decimal
+      if (typeof data[campo] === "string") {
+        data[campo] = data[campo].replace(",", ".");
+      }
+      // Converte para número (parseFloat aceita tanto ponto quanto string numérica)
+      data[campo] = parseFloat(data[campo]);
+    }
+  });
+
+  return data;
+};
+
 // Editar atividade (função estava faltando)
 exports.editarAtividade = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, descricao } = req.body;
+    let dadosAtualizacao = req.body;
 
-    const atividade = await Atividade.findOne({
-      where: { id, userId: req.user.id },
-    });
+    const atividade = await Atividade.findByPk(id);
 
     if (!atividade) {
       return res.status(404).json({ message: "Atividade não encontrada" });
     }
 
-    await atividade.update({ nome, descricao });
+    // Processar campos numéricos se existirem nos dados de atualização
+    dadosAtualizacao = processarCamposNumericos(dadosAtualizacao);
+
+    await atividade.update(dadosAtualizacao);
     res.status(200).json(atividade);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -46,7 +70,7 @@ exports.excluirAtividade = async (req, res) => {
 // Cadastrar nova atividade
 exports.cadastrarAtividade = async (req, res) => {
   try {
-    const {
+    let {
       obra,
       nome,
       data,
@@ -59,15 +83,23 @@ exports.cadastrarAtividade = async (req, res) => {
       obraId,
     } = req.body;
 
+    // Processar campos numéricos (converter vírgulas em pontos)
+    const dadosProcessados = processarCamposNumericos({
+      numeroOperarios,
+      numeroAjudantes,
+      horasTrabalho,
+      quantidadeExecutada,
+    });
+
     // Remover a dependência do userId por enquanto
     const atividade = await Atividade.create({
       obra,
       nome,
       data,
-      numeroOperarios,
-      numeroAjudantes,
-      horasTrabalho,
-      quantidadeExecutada,
+      numeroOperarios: dadosProcessados.numeroOperarios,
+      numeroAjudantes: dadosProcessados.numeroAjudantes,
+      horasTrabalho: dadosProcessados.horasTrabalho,
+      quantidadeExecutada: dadosProcessados.quantidadeExecutada,
       local,
       observacoes,
       obraId,

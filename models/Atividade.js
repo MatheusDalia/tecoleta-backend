@@ -24,11 +24,11 @@ const Atividade = sequelize.define("Atividade", {
     allowNull: true, // Opcional
   },
   horasTrabalho: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.DECIMAL(15, 3), // Permite até 15 dígitos antes da vírgula e 3 após
     allowNull: false,
   },
   quantidadeExecutada: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.DECIMAL(15, 3), // Permite até 15 dígitos antes da vírgula e 3 após
     allowNull: false,
   },
   local: {
