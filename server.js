@@ -40,7 +40,7 @@ sequelize
     console.log("Conexão com o banco de dados estabelecida com sucesso.");
 
     // Sincronizar o banco de dados e iniciar o servidor
-    return sequelize.sync({ alter: true }); // Aplicar alterações do modelo ao banco existente
+    return sequelize.sync(); // Alterações já aplicadas - removido { alter: true }
   })
   .then(() => {
     app.listen(3003, () => {
