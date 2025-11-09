@@ -11,17 +11,25 @@ const processarCamposNumericos = (data) => {
     "quantidadeExecutada",
   ];
 
+  console.log("ANTES do processamento:", data);
+
   camposNumericos.forEach((campo) => {
     if (data[campo] !== undefined && data[campo] !== null) {
+      const valorOriginal = data[campo];
       // Converte string com vírgula para número com ponto decimal
       if (typeof data[campo] === "string") {
         data[campo] = data[campo].replace(",", ".");
+        console.log(`Campo ${campo}: "${valorOriginal}" -> "${data[campo]}"`);
       }
       // Converte para número (parseFloat aceita tanto ponto quanto string numérica)
       data[campo] = parseFloat(data[campo]);
+      console.log(
+        `Campo ${campo} final: ${data[campo]} (tipo: ${typeof data[campo]})`
+      );
     }
   });
 
+  console.log("DEPOIS do processamento:", data);
   return data;
 };
 
