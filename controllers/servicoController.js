@@ -29,7 +29,7 @@ exports.listarServicos = async (req, res) => {
         {
           model: User,
           as: "criador",
-          attributes: ["id", "nome", "email"],
+          attributes: ["id", "email"],
         },
       ],
       order: [["nome", "ASC"]],
@@ -67,7 +67,7 @@ exports.obterServico = async (req, res) => {
         {
           model: User,
           as: "criador",
-          attributes: ["id", "nome", "email"],
+          attributes: ["id", "email"],
         },
       ],
     });
@@ -147,7 +147,7 @@ exports.criarServico = async (req, res) => {
         {
           model: User,
           as: "criador",
-          attributes: ["id", "nome", "email"],
+          attributes: ["id", "email"],
         },
       ],
     });
@@ -236,7 +236,7 @@ exports.atualizarServico = async (req, res) => {
         {
           model: User,
           as: "criador",
-          attributes: ["id", "nome", "email"],
+          attributes: ["id", "email"],
         },
       ],
     });
@@ -339,7 +339,7 @@ exports.reativarServico = async (req, res) => {
         {
           model: User,
           as: "criador",
-          attributes: ["id", "nome", "email"],
+          attributes: ["id", "email"],
         },
       ],
     });
