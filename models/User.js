@@ -47,6 +47,11 @@ User.associate = (models) => {
     as: "obrasColaboradas",
     foreignKey: "userId",
   });
+  // Um usuário pode criar vários serviços
+  User.hasMany(models.Servico, {
+    foreignKey: "criadoPor",
+    as: "servicosCriados",
+  });
 };
 
 module.exports = User;
