@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node server.js",
+    "create-test-users": "node create-test-users.js",
+    "populate-servicos": "node populate-servicos.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
