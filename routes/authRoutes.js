@@ -2,26 +2,13 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const User = require("../models/User");
+const { sendEmail } = require("../services/emailService");
 require("dotenv").config();
-console.log("SMTP_HOST:", process.env.SMTP_HOST);
 const { Op } = require("sequelize");
 
-// Configuração do nodemailer
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: process.env.SMTP_PORT == 465, // true para 465, false para 587/25
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
+const BASE_URL = "https://tecoleta.tecomat.com.br";
 
 // Verificar se email já existe
 router.post("/verificar-email", async (req, res) => {
@@ -62,22 +49,24 @@ router.post("/cadastro", async (req, res) => {
       emailVerificado: false,
     });
 
-    // Enviar email de verificação
-    const verificationLink = `${process.env.FRONTEND_URL}/api/confirmar-email?token=${tokenVerificacao}`;
-    await transporter.sendMail({
-      from: process.env.SMTP_USER,
-      to: email,
-      subject: "Verifique seu email",
-      html: `<h1>Bem-vindo ao nosso sistema!</h1>
-             <p>Por favor, clique no link abaixo para confirmar seu email:</p>
-             <a href="${verificationLink}">Confirmar email</a>
-             <p>Este link é válido por 24 horas.</p>`,
-    });
+    // Enviar email de verificação (erro não deve quebrar o cadastro)
+    const verificationLink = `${BASE_URL}/api/confirmar-email?token=${tokenVerificacao}`;
+    try {
+      await sendEmail(
+        email,
+        "Confirme seu email - TEColeta",
+        `<h2>Bem-vindo ao TEColeta!</h2>
+         <p>Clique no botão abaixo para confirmar seu email:</p>
+         <a href="${verificationLink}" style="background:#1B3F8F;color:#fff;padding:12px 24px;border-radius:5px;text-decoration:none;font-weight:bold;">Confirmar Email</a>
+         <p>Se não foi você, ignore este email.</p>`,
+      );
+    } catch (emailError) {
+      console.error("Erro ao enviar email de verificação:", emailError.message);
+    }
 
     res.status(201).json({
       success: true,
-      message:
-        "Usuário cadastrado com sucesso. Por favor, verifique seu email.",
+      message: "Cadastro realizado! Verifique seu email.",
     });
   } catch (error) {
     console.error("Erro ao cadastrar usuário:", error);
@@ -117,21 +106,18 @@ router.post("/enviar-verificacao", async (req, res) => {
     });
 
     // Enviar novo email
-    const verificationLink = `${process.env.FRONTEND_URL}/api/confirmar-email?token=${tokenVerificacao}`;
+    const verificationLink = `${BASE_URL}/api/confirmar-email?token=${tokenVerificacao}`;
 
-    await transporter.sendMail({
-      from: process.env.SMTP_USER || process.env.EMAIL_USER,
-      to: email,
-      subject: "Verifique seu email",
-      html: `
-        <h1>Verificação de email</h1>
-        <p>Por favor, clique no link abaixo para verificar seu email:</p>
-        <a href="${verificationLink}">Verificar email</a>
-        <p>Este link é válido por 24 horas.</p>
-      `,
-    });
+    await sendEmail(
+      email,
+      "Confirme seu email - TEColeta",
+      `<h2>Bem-vindo ao TEColeta!</h2>
+       <p>Clique no botão abaixo para confirmar seu email:</p>
+       <a href="${verificationLink}" style="background:#1B3F8F;color:#fff;padding:12px 24px;border-radius:5px;text-decoration:none;font-weight:bold;">Confirmar Email</a>
+       <p>Se não foi você, ignore este email.</p>`,
+    );
 
-    res.json({ message: "Email de verificação reenviado com sucesso." });
+    res.json({ message: "Email de verificação reenviado!" });
   } catch (error) {
     console.error("Erro ao reenviar verificação:", error);
     res.status(500).json({ message: "Erro ao reenviar email de verificação" });
@@ -153,6 +139,7 @@ router.get("/confirmar-email", async (req, res) => {
 
     if (!user) {
       return res.status(400).json({
+        success: false,
         message: "Token inválido ou expirado",
       });
     }
@@ -164,7 +151,7 @@ router.get("/confirmar-email", async (req, res) => {
       tokenExpiracao: null,
     });
 
-    res.json({ message: "Email verificado com sucesso" });
+    res.json({ success: true });
   } catch (error) {
     console.error("Erro ao confirmar email:", error);
     res.status(500).json({ message: "Erro ao confirmar email" });
@@ -199,7 +186,7 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       { id: user.id, role: user.role }, // Incluindo o role no payload
       process.env.JWT_SECRET || "secretkey",
-      { expiresIn: "1h" } // Token expira em 1 hora
+      { expiresIn: "1h" }, // Token expira em 1 hora
     );
 
     res.json({ token });
@@ -214,48 +201,38 @@ router.post("/reset-password", async (req, res) => {
   try {
     const { email } = req.body;
 
-    // Verificar se o usuário existe
+    // Por segurança, não revelar se o email existe ou não
     const user = await User.findOne({ where: { email } });
 
-    if (!user) {
-      return res
-        .status(404)
-        .json({ message: "Usuário não encontrado com este email." });
+    if (user) {
+      // Gerar token de redefinição de senha
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const resetExpiration = new Date(Date.now() + 3600000); // 1 hora
+
+      await user.update({
+        resetPasswordToken: resetToken,
+        resetPasswordExpires: resetExpiration,
+      });
+
+      try {
+        await sendEmail(
+          email,
+          "Redefinição de senha - TEColeta",
+          `<h2>Redefinição de senha</h2>
+           <p>Recebemos uma solicitação para redefinir sua senha.</p>
+           <p>Use o código abaixo no aplicativo, na tela "Inserir senha nova":</p>
+           <h1 style="letter-spacing:4px;color:#1B3F8F;">${resetToken}</h1>
+           <p>Este código expira em 1 hora.</p>
+           <p>Se não foi você, ignore este email.</p>`,
+        );
+      } catch (emailError) {
+        console.error("Erro ao enviar email de reset:", emailError.message);
+      }
     }
 
-    // Gerar token de redefinição de senha
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetExpiration = new Date();
-    resetExpiration.setHours(resetExpiration.getHours() + 1); // Token válido por 1 hora
-
-    // Atualizar usuário com token de redefinição
-    await user.update({
-      resetPasswordToken: resetToken,
-      resetPasswordExpires: resetExpiration,
-    });
-
-    // Criar URL de redefinição
-    const baseUrl = "meuapp:";
-    const resetUrl = `${baseUrl}//reset-password?token=${resetToken}`;
-
-    // Enviar email com link de redefinição
-    await transporter.sendMail({
-      from: process.env.SMTP_USER,
-      to: email,
-      subject: "Redefinição de Senha",
-      html: `
-        <h1>Redefinição de Senha</h1>
-        <p>Você solicitou a redefinição de sua senha.</p>
-        <p>Use o token abaixo no aplicativo para redefinir sua senha:</p>
-        <p style="font-family: monospace; font-size: 20px;">${resetToken}</p>
-        <p>Este token é válido por 1 hora.</p>
-        <p>Se você não solicitou isso, ignore este e-mail.</p>
-      `,
-    });
-
     res.json({
-      success: true,
-      message: "Email enviado com instruções para redefinir sua senha.",
+      message:
+        "Se este email estiver cadastrado, você receberá um link em breve.",
     });
   } catch (error) {
     console.error("Erro ao solicitar redefinição de senha:", error);
@@ -268,13 +245,20 @@ router.post("/reset-password", async (req, res) => {
 // Nova rota: Redefinir senha com token
 router.post("/new-password", async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
+    const { email, token, newPassword } = req.body;
 
-    // Verificar se existe um usuário com este token que ainda é válido
+    if (!email || !token || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: "email, token e newPassword são obrigatórios." });
+    }
+
+    // Verificar se existe um usuário com este email + token que ainda é válido
     const user = await User.findOne({
       where: {
+        email,
         resetPasswordToken: token,
-        resetPasswordExpires: { [Op.gt]: new Date() }, // Token ainda não expirou
+        resetPasswordExpires: { [Op.gt]: new Date() },
       },
     });
 
@@ -293,10 +277,7 @@ router.post("/new-password", async (req, res) => {
       emailVerificado: true, // Marca como verificado após redefinir senha
     });
 
-    res.json({
-      success: true,
-      message: "Senha alterada com sucesso! Faça login com sua nova senha.",
-    });
+    res.json({ message: "Senha alterada com sucesso!" });
   } catch (error) {
     console.error("Erro ao redefinir senha:", error);
     res.status(500).json({ message: "Erro ao redefinir senha." });
