@@ -3,7 +3,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 require("dotenv").config();
-console.log("SMTP_HOST (server.js):", process.env.SMTP_HOST);
 const sequelize = require("./config/database"); // Configuração do banco de dados
 
 // Importar os modelos através do index

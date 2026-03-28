@@ -214,20 +214,16 @@ router.post("/reset-password", async (req, res) => {
         resetPasswordExpires: resetExpiration,
       });
 
-      try {
-        await sendEmail(
-          email,
-          "Redefinição de senha - TEColeta",
-          `<h2>Redefinição de senha</h2>
+      await sendEmail(
+        email,
+        "Redefinição de senha - TEColeta",
+        `<h2>Redefinição de senha</h2>
            <p>Recebemos uma solicitação para redefinir sua senha.</p>
            <p>Use o código abaixo no aplicativo, na tela "Inserir senha nova":</p>
            <h1 style="letter-spacing:4px;color:#1B3F8F;">${resetToken}</h1>
            <p>Este código expira em 1 hora.</p>
            <p>Se não foi você, ignore este email.</p>`,
-        );
-      } catch (emailError) {
-        console.error("Erro ao enviar email de reset:", emailError.message);
-      }
+      );
     }
 
     res.json({
